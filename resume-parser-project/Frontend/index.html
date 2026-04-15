@@ -127,7 +127,7 @@ button.upload {
 
     <div class="upload-box">
         <p>📄 Upload your Resume</p>
-        <input type="file" id="fileInput"><br>
+        <input type="file" id="fileInput" accept=".pdf"><br>
         <button class="upload" onclick="uploadFile()">Analyze Resume</button>
     </div>
 
@@ -189,11 +189,11 @@ async function uploadFile() {
             body: formData
         });
 
-        if (!res.ok) {
-            throw new Error(`Backend returned ${res.status}`);
-        }
-
         let data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || `Backend returned ${res.status}`);
+        }
 
         document.getElementById("result").innerHTML = `
             👤 Name: ${data.name} <br>
@@ -206,7 +206,7 @@ async function uploadFile() {
         bar.style.width = score + "%";
         bar.innerHTML = score + "% ATS Score";
     } catch (error) {
-        document.getElementById("result").innerHTML = `<div class="error">Upload failed: ${error.message}. Check the backend URL and try again.</div>`;
+        document.getElementById("result").innerHTML = `<div class="error">Upload failed: ${error.message}</div>`;
     }
 }
 </script>

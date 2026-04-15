@@ -4,6 +4,7 @@ import PyPDF2
 import re
 import spacy
 import os
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
@@ -17,7 +18,7 @@ def home():
 
 # 🔹 Extract text
 def extract_text(file):
-    reader = PyPDF2.PdfReader(file)
+    reader = PyPDF2.PdfReader(BytesIO(file.read()))
     text = ""
     for page in reader.pages:
         if page.extract_text():
@@ -50,22 +51,37 @@ def extract_skills(text):
 # 🔹 Upload API
 @app.route('/upload', methods=['POST'])
 def upload_resume():
-    file = request.files['file']
-    text = extract_text(file)
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
 
-    name = extract_name(text)
-    email = extract_email(text)
-    skills = extract_skills(text)
+        file = request.files['file']
+        if not file or not file.filename:
+            return jsonify({"error": "No file selected"}), 400
 
-    # 🔹 Simple ATS score
-    ats_score = min(len(skills) * 20, 100)
+        if not file.filename.lower().endswith('.pdf'):
+            return jsonify({"error": "Please upload a PDF resume"}), 400
 
-    return jsonify({
-        "name": name,
-        "email": email,
-        "skills": skills,
-        "ats_score": ats_score
-    })
+        text = extract_text(file)
+        if not text.strip():
+            return jsonify({"error": "Could not read text from the PDF"}), 400
+
+        name = extract_name(text)
+        email = extract_email(text)
+        skills = extract_skills(text)
+
+        # 🔹 Simple ATS score
+        ats_score = min(len(skills) * 20, 100)
+
+        return jsonify({
+            "name": name,
+            "email": email,
+            "skills": skills,
+            "ats_score": ats_score
+        })
+    except Exception as error:
+        app.logger.exception("Upload failed")
+        return jsonify({"error": f"Upload failed on server: {str(error)}"}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
