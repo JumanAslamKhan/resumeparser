@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Resume Parser</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #c2e9fb, #fbc2eb);
+    text-align: center;
+}
+
+h1 {
+    margin-top: 30px;
+    font-size: 40px;
+}
+
+.subtitle {
+    color: #333;
+    margin-top: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: none;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.login {
+    background: #4a6cf7;
+    color: white;
+}
+
+.signup {
+    background: black;
+    color: white;
+}
+
+.container {
+    margin-top: 40px;
+}
+
+.upload-box {
+    border: 2px dashed #444;
+    width: 400px;
+    margin: auto;
+    padding: 30px;
+    border-radius: 10px;
+    background: white;
+}
+
+button.upload {
+    margin-top: 15px;
+    background: #4a6cf7;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+.features {
+    margin-top: 60px;
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
+    width: 200px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.card img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+#result {
+    margin-top: 20px;
+}
+
+.progress {
+    width: 300px;
+    margin: auto;
+    height: 20px;
+    background: #ddd;
+    border-radius: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #28a745;
+    width: 0%;
+    border-radius: 10px;
+    color: white;
+}
+</style>
+
+</head>
+<body>
+
+<h2>Resume Parser.io</h2>
+
+<h1>Struggling with Resume Parsing & ATS?</h1>
+<p class="subtitle">Upload → Analyze → Improve your resume easily</p>
+
+<button class="btn login">Login</button>
+<button class="btn signup">Sign Up</button>
+
+<div class="container">
+
+    <div class="upload-box">
+        <p>📄 Upload your Resume</p>
+        <input type="text" id="apiUrl" placeholder="Backend URL (e.g. https://your-api.onrender.com)" style="width: 90%; padding: 8px; margin-bottom: 10px;">
+        <input type="file" id="fileInput"><br>
+        <button class="upload" onclick="uploadFile()">Analyze Resume</button>
+    </div>
+
+    <div id="result"></div>
+
+    <div class="progress">
+        <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+
+</div>
+
+<div class="features">
+    <h2>Our Features</h2>
+
+    <div class="cards">
+
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/2920/2920277.png">
+            <p>Extract Data From Resume</p>
+        </div>
+
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/1491/1491812.png">
+            <p>Detailed Resume Analysis</p>
+        </div>
+
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png">
+            <p>ATS Score Check</p>
+        </div>
+
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
+            <p>Drag & Drop Feature</p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+let file;
+const apiUrlInput = document.getElementById("apiUrl");
+apiUrlInput.value = localStorage.getItem("API_BASE_URL") || "http://127.0.0.1:5000";
+
+document.getElementById("fileInput").onchange = function() {
+    file = this.files[0];
+};
+
+async function uploadFile() {
+    if (!file) return alert("Select file first");
+    const apiBase = (apiUrlInput.value || "").trim().replace(/\/$/, "");
+    if (!apiBase) return alert("Enter backend URL first");
+    localStorage.setItem("API_BASE_URL", apiBase);
+
+    let formData = new FormData();
+    formData.append("file", file);
+
+    document.getElementById("result").innerHTML = "⏳ Processing...";
+
+    let res = await fetch(`${apiBase}/upload`, {
+        method: "POST",
+        body: formData
+    });
+
+    let data = await res.json();
+
+    document.getElementById("result").innerHTML = `
+        👤 Name: ${data.name} <br>
+        📧 Email: ${data.email} <br>
+        💡 Skills: ${data.skills.join(", ")}
+    `;
+
+    let score = data.ats_score;
+    let bar = document.getElementById("progressBar");
+    bar.style.width = score + "%";
+    bar.innerHTML = score + "% ATS Score";
+}
+</script>
+
+</body>
+</html>

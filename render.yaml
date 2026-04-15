@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: resume-parser-api
+    runtime: python
+    plan: free
+    rootDir: resume-parser-project/Backend
+    buildCommand: pip install -r requirements.txt && python -m spacy download en_core_web_sm
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
