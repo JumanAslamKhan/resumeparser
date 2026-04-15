@@ -105,6 +105,11 @@ button.upload {
     border-radius: 10px;
     color: white;
 }
+
+.error {
+    color: #b00020;
+    margin-top: 12px;
+}
 </style>
 
 </head>
@@ -122,7 +127,6 @@ button.upload {
 
     <div class="upload-box">
         <p>📄 Upload your Resume</p>
-        <input type="text" id="apiUrl" placeholder="Backend URL (e.g. https://your-api.onrender.com)" style="width: 90%; padding: 8px; margin-bottom: 10px;">
         <input type="file" id="fileInput"><br>
         <button class="upload" onclick="uploadFile()">Analyze Resume</button>
     </div>
@@ -165,8 +169,7 @@ button.upload {
 
 <script>
 let file;
-const apiUrlInput = document.getElementById("apiUrl");
-apiUrlInput.value = localStorage.getItem("API_BASE_URL") || "http://127.0.0.1:5000";
+const apiBase = "https://resume-parser-api-yvn2.onrender.com";
 
 document.getElementById("fileInput").onchange = function() {
     file = this.files[0];
@@ -174,32 +177,37 @@ document.getElementById("fileInput").onchange = function() {
 
 async function uploadFile() {
     if (!file) return alert("Select file first");
-    const apiBase = (apiUrlInput.value || "").trim().replace(/\/$/, "");
-    if (!apiBase) return alert("Enter backend URL first");
-    localStorage.setItem("API_BASE_URL", apiBase);
 
     let formData = new FormData();
     formData.append("file", file);
 
     document.getElementById("result").innerHTML = "⏳ Processing...";
 
-    let res = await fetch(`${apiBase}/upload`, {
-        method: "POST",
-        body: formData
-    });
+    try {
+        let res = await fetch(`${apiBase}/upload`, {
+            method: "POST",
+            body: formData
+        });
 
-    let data = await res.json();
+        if (!res.ok) {
+            throw new Error(`Backend returned ${res.status}`);
+        }
 
-    document.getElementById("result").innerHTML = `
-        👤 Name: ${data.name} <br>
-        📧 Email: ${data.email} <br>
-        💡 Skills: ${data.skills.join(", ")}
-    `;
+        let data = await res.json();
 
-    let score = data.ats_score;
-    let bar = document.getElementById("progressBar");
-    bar.style.width = score + "%";
-    bar.innerHTML = score + "% ATS Score";
+        document.getElementById("result").innerHTML = `
+            👤 Name: ${data.name} <br>
+            📧 Email: ${data.email} <br>
+            💡 Skills: ${data.skills.join(", ")}
+        `;
+
+        let score = data.ats_score;
+        let bar = document.getElementById("progressBar");
+        bar.style.width = score + "%";
+        bar.innerHTML = score + "% ATS Score";
+    } catch (error) {
+        document.getElementById("result").innerHTML = `<div class="error">Upload failed: ${error.message}. Check the backend URL and try again.</div>`;
+    }
 }
 </script>
 
