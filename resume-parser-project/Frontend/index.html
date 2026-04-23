@@ -169,7 +169,8 @@ button.upload {
 
 <script>
 let file;
-const apiBase = "https://resume-parser-api-yvn2.onrender.com";
+const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const apiBase = isLocalhost ? "http://127.0.0.1:5000" : window.location.origin;
 
 document.getElementById("fileInput").onchange = function() {
     file = this.files[0];

@@ -5,6 +5,8 @@ import re
 import spacy
 import os
 from io import BytesIO
+from pathlib import Path
+from flask import send_from_directory
 
 app = Flask(__name__)
 CORS(app)
@@ -14,7 +16,11 @@ nlp = spacy.load("en_core_web_sm")
 # 🔹 Home route
 @app.route('/')
 def home():
-    return "Backend running 🚀"
+    frontend_dir = Path(__file__).resolve().parent.parent / "Frontend"
+    frontend_index = frontend_dir / "index.html"
+    if frontend_index.exists():
+        return send_from_directory(frontend_dir, "index.html")
+    return jsonify({"message": "Resume Parser API is running", "upload_endpoint": "/upload"})
 
 # 🔹 Extract text
 def extract_text(file):
