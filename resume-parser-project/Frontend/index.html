@@ -17,8 +17,32 @@
 <h1>Struggling with Resume Parsing & ATS?</h1>
 <p class="subtitle">Upload → Analyze → Improve your resume easily</p>
 
-<button class="btn login">Login</button>
-<button class="btn signup">Sign Up</button>
+<div class="auth-controls">
+    <button class="btn login" id="showLoginBtn" type="button">Login</button>
+    <button class="btn signup" id="showSignupBtn" type="button">Sign Up</button>
+    <button class="btn logout hidden" id="logoutBtn" type="button">Logout</button>
+</div>
+
+<div class="auth-card" id="authCard">
+    <h3 id="authTitle">Create Account</h3>
+    <p class="auth-subtitle" id="authSubtitle">Start saving parsed resumes in your dashboard.</p>
+
+    <form id="signupForm" class="auth-form">
+        <input type="text" id="signupName" placeholder="Full name" required>
+        <input type="email" id="signupEmail" placeholder="Email" required>
+        <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" required>
+        <button type="submit" class="btn auth-submit">Create account</button>
+    </form>
+
+    <form id="loginForm" class="auth-form hidden">
+        <input type="email" id="loginEmail" placeholder="Email" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button type="submit" class="btn auth-submit">Login</button>
+    </form>
+
+    <p id="authMessage" class="auth-message"></p>
+    <p id="userBadge" class="user-badge hidden"></p>
+</div>
 
 <div class="container">
 
@@ -32,6 +56,13 @@
 
     <div class="progress">
         <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+
+    <div class="history" id="historySection">
+        <h3>Your Uploaded Resumes</h3>
+        <div id="historyList" class="history-list">
+            <p class="muted">Login to see your upload history.</p>
+        </div>
     </div>
 
 </div>
@@ -68,22 +99,205 @@
 let file;
 const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 const apiBase = isLocalhost ? "http://127.0.0.1:5000" : window.location.origin;
+let activeUser = null;
 
-document.getElementById("fileInput").onchange = function() {
+const fileInput = document.getElementById("fileInput");
+const authCard = document.getElementById("authCard");
+const authTitle = document.getElementById("authTitle");
+const authSubtitle = document.getElementById("authSubtitle");
+const authMessage = document.getElementById("authMessage");
+const userBadge = document.getElementById("userBadge");
+const signupForm = document.getElementById("signupForm");
+const loginForm = document.getElementById("loginForm");
+const showLoginBtn = document.getElementById("showLoginBtn");
+const showSignupBtn = document.getElementById("showSignupBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const historyList = document.getElementById("historyList");
+const resultBox = document.getElementById("result");
+const progressBar = document.getElementById("progressBar");
+
+function setAuthMode(mode) {
+    const loginMode = mode === "login";
+    loginForm.classList.toggle("hidden", !loginMode);
+    signupForm.classList.toggle("hidden", loginMode);
+    authTitle.textContent = loginMode ? "Welcome back" : "Create Account";
+    authSubtitle.textContent = loginMode
+        ? "Log in to manage all your uploaded resumes."
+        : "Start saving parsed resumes in your dashboard.";
+    authMessage.textContent = "";
+}
+
+function updateAuthUI() {
+    const isLoggedIn = !!activeUser;
+    authCard.classList.toggle("hidden", isLoggedIn);
+    logoutBtn.classList.toggle("hidden", !isLoggedIn);
+    showLoginBtn.classList.toggle("hidden", isLoggedIn);
+    showSignupBtn.classList.toggle("hidden", isLoggedIn);
+    userBadge.classList.toggle("hidden", !isLoggedIn);
+
+    if (isLoggedIn) {
+        userBadge.textContent = `Logged in as ${activeUser.full_name} (${activeUser.email})`;
+    }
+}
+
+function renderHistory(resumes) {
+    if (!resumes.length) {
+        historyList.innerHTML = '<p class="muted">No resumes uploaded yet.</p>';
+        return;
+    }
+
+    historyList.innerHTML = resumes.map((resume) => `
+        <article class="history-item">
+            <div class="history-head">
+                <strong>${resume.filename}</strong>
+                <span>${new Date(resume.uploaded_at).toLocaleString()}</span>
+            </div>
+            <p>Parsed Name: ${resume.name}</p>
+            <p>Email: ${resume.email}</p>
+            <p>Skills: ${resume.skills.join(", ") || "None"}</p>
+            <p class="ats-pill">ATS Score: ${resume.ats_score}%</p>
+        </article>
+    `).join("");
+}
+
+async function fetchProfile() {
+    try {
+        const res = await fetch(`${apiBase}/auth/me`, {
+            method: "GET",
+            credentials: "include"
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            activeUser = null;
+            updateAuthUI();
+            return;
+        }
+
+        activeUser = data.user;
+        updateAuthUI();
+        await loadResumeHistory();
+    } catch (error) {
+        activeUser = null;
+        updateAuthUI();
+    }
+}
+
+async function loadResumeHistory() {
+    if (!activeUser) {
+        historyList.innerHTML = '<p class="muted">Login to see your upload history.</p>';
+        return;
+    }
+
+    const res = await fetch(`${apiBase}/resumes`, {
+        method: "GET",
+        credentials: "include"
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+        historyList.innerHTML = `<p class="error">${data.error || "Could not load history"}</p>`;
+        return;
+    }
+
+    renderHistory(data.resumes || []);
+}
+
+fileInput.onchange = function() {
     file = this.files[0];
 };
 
+showLoginBtn.addEventListener("click", () => setAuthMode("login"));
+showSignupBtn.addEventListener("click", () => setAuthMode("signup"));
+
+signupForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    authMessage.textContent = "Creating account...";
+
+    const payload = {
+        full_name: document.getElementById("signupName").value.trim(),
+        email: document.getElementById("signupEmail").value.trim(),
+        password: document.getElementById("signupPassword").value
+    };
+
+    const res = await fetch(`${apiBase}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+        authMessage.textContent = data.error || "Signup failed";
+        authMessage.classList.add("error");
+        return;
+    }
+
+    authMessage.classList.remove("error");
+    authMessage.textContent = "Account created successfully.";
+    activeUser = data.user;
+    updateAuthUI();
+    await loadResumeHistory();
+});
+
+loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    authMessage.textContent = "Logging in...";
+
+    const payload = {
+        email: document.getElementById("loginEmail").value.trim(),
+        password: document.getElementById("loginPassword").value
+    };
+
+    const res = await fetch(`${apiBase}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+        authMessage.textContent = data.error || "Login failed";
+        authMessage.classList.add("error");
+        return;
+    }
+
+    authMessage.classList.remove("error");
+    authMessage.textContent = "Login successful.";
+    activeUser = data.user;
+    updateAuthUI();
+    await loadResumeHistory();
+});
+
+logoutBtn.addEventListener("click", async () => {
+    await fetch(`${apiBase}/auth/logout`, {
+        method: "POST",
+        credentials: "include"
+    });
+
+    activeUser = null;
+    updateAuthUI();
+    historyList.innerHTML = '<p class="muted">Login to see your upload history.</p>';
+});
+
 async function uploadFile() {
     if (!file) return alert("Select file first");
+    if (!activeUser) {
+        alert("Please login first to upload your resume.");
+        return;
+    }
 
     let formData = new FormData();
     formData.append("file", file);
 
-    document.getElementById("result").innerHTML = "⏳ Processing...";
+    resultBox.innerHTML = "⏳ Processing...";
 
     try {
         let res = await fetch(`${apiBase}/upload`, {
             method: "POST",
+            credentials: "include",
             body: formData
         });
 
@@ -93,20 +307,24 @@ async function uploadFile() {
             throw new Error(data.error || `Backend returned ${res.status}`);
         }
 
-        document.getElementById("result").innerHTML = `
+        resultBox.innerHTML = `
             👤 Name: ${data.name} <br>
             📧 Email: ${data.email} <br>
             💡 Skills: ${data.skills.join(", ")}
         `;
 
         let score = data.ats_score;
-        let bar = document.getElementById("progressBar");
-        bar.style.width = score + "%";
-        bar.innerHTML = score + "% ATS Score";
+        progressBar.style.width = score + "%";
+        progressBar.innerHTML = score + "% ATS Score";
+        await loadResumeHistory();
     } catch (error) {
-        document.getElementById("result").innerHTML = `<div class="error">Upload failed: ${error.message}</div>`;
+        resultBox.innerHTML = `<div class="error">Upload failed: ${error.message}</div>`;
     }
 }
+
+setAuthMode("signup");
+updateAuthUI();
+fetchProfile();
 </script>
 
 </body>
