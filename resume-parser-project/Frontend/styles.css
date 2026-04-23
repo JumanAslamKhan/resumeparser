@@ -1,0 +1,228 @@
+:root {
+    --bg-cream: #f7f5ef;
+    --bg-accent: #d9ece6;
+    --surface: #ffffff;
+    --text-primary: #1d2b27;
+    --text-secondary: #52635e;
+    --line: #b7c8c2;
+    --brand: #0f766e;
+    --brand-dark: #0a4f4a;
+    --success: #2d8a57;
+    --danger: #b42318;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Manrope", "Segoe UI", sans-serif;
+    color: var(--text-primary);
+    text-align: center;
+    background:
+        radial-gradient(circle at 15% 10%, #f0ded2 0%, transparent 35%),
+        radial-gradient(circle at 85% 20%, #d8ebe5 0%, transparent 42%),
+        linear-gradient(160deg, var(--bg-cream), var(--bg-accent));
+    padding: 18px 16px 56px;
+}
+
+h2 {
+    margin: 6px 0 2px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+}
+
+h1 {
+    margin: 18px auto 8px;
+    max-width: 820px;
+    font-size: clamp(1.9rem, 2.8vw, 3.1rem);
+    line-height: 1.1;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    margin: 0 auto;
+    max-width: 620px;
+    font-size: 1rem;
+}
+
+.btn {
+    margin: 16px 8px 0;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.login {
+    background: var(--surface);
+    border-color: var(--line);
+    color: var(--text-primary);
+    box-shadow: 0 10px 24px rgba(20, 45, 37, 0.07);
+}
+
+.signup {
+    background: var(--brand);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.24);
+}
+
+.container {
+    margin: 38px auto 0;
+    max-width: 860px;
+    animation: fadeUp 420ms ease both;
+}
+
+.upload-box {
+    border: 2px dashed var(--line);
+    max-width: 500px;
+    margin: auto;
+    padding: 28px 22px;
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: 0 20px 40px rgba(15, 36, 32, 0.08);
+}
+
+.upload-box p {
+    margin-top: 4px;
+    margin-bottom: 14px;
+    font-weight: 700;
+}
+
+#fileInput {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+button.upload {
+    margin-top: 16px;
+    background: var(--brand);
+    color: #fff;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 180ms ease, transform 180ms ease;
+}
+
+button.upload:hover {
+    background: var(--brand-dark);
+    transform: translateY(-1px);
+}
+
+#result {
+    margin: 18px auto 0;
+    max-width: 520px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.74);
+    border: 1px solid #dce7e3;
+    border-radius: 12px;
+    padding: 12px 14px;
+    line-height: 1.6;
+}
+
+.progress {
+    width: min(360px, 92%);
+    margin: 14px auto 0;
+    height: 20px;
+    background: #d8e5e0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #1b8a62, var(--success));
+    width: 0%;
+    color: #fff;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 340ms ease;
+}
+
+.features {
+    margin: 54px auto 0;
+    max-width: 980px;
+    animation: fadeUp 600ms ease both;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.84);
+    padding: 14px;
+    border-radius: 16px;
+    box-shadow: 0 10px 24px rgba(17, 41, 35, 0.08);
+    border: 1px solid #dde9e4;
+}
+
+.card img {
+    width: 100%;
+    border-radius: 10px;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    background: #f7faf8;
+}
+
+.card p {
+    margin: 10px 0 2px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.error {
+    color: var(--danger);
+    margin-top: 0;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 640px) {
+    body {
+        padding: 12px 12px 38px;
+    }
+
+    h1 {
+        font-size: clamp(1.6rem, 7vw, 2.2rem);
+    }
+
+    .btn {
+        width: 132px;
+    }
+
+    .upload-box {
+        padding: 20px 14px;
+    }
+
+    .cards {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+    }
+}
